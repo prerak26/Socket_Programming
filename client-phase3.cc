@@ -902,8 +902,8 @@ int main(int argc, char *argv[])
                             // reply_to_files--;
                         }
                         for(auto it:r_msg[6]){
-                            phase3_small_client_cnt--;
-                            string msg=it+" 7#";
+                            
+                
                             int k=0;string peer="";
                             while(it[k]!=' '){
                                 peer+=it[k];k++;
@@ -1030,6 +1030,7 @@ int main(int argc, char *argv[])
                                             phase3_ans.push_back(ans_here);
                                 }
                             }
+                            phase3_small_client_cnt--;
                         }  // END handle data from client
                     }
                 }     // END got ready-to-read from poll()
@@ -1188,12 +1189,98 @@ int main(int argc, char *argv[])
             if(send(it.second.second,msg.c_str(),msg.length(),0)==-1){
                 perror("send");
             }
+            char recvbuf[numbytes];
+            int nbytes = recv(it.second.second, recvbuf, 4, 0);
+            recvbuf[nbytes] = '\0';
+            if (nbytes <= 0)
+            {
+                // Got error or connection closed by client
+                if (nbytes == 0)
+                {
+                    // Connection closed
+                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                }
+                else
+                {
+                    // perror("recv");
+                }
+                close(pfds[i].fd); // Bye!
+                del_from_pfds(pfds, i, &fd_count);
+            }
+            else
+            {
+                int number_off_to_send = atoi(recvbuf[0]);
+                while(number_off_to_send--){
+                    char recvbuf[numbytes];
+                    int nbytes = recv(it.second.second, recvbuf, size of recvbuf, 0);
+                    recvbuf[nbytes] = '\0';
+                    if (nbytes <= 0)
+                    {
+                        // Got error or connection closed by client
+                        if (nbytes == 0)
+                        {
+                            // Connection closed
+                            // printf("pollserver: socket %d hung up\n", sender_fd);
+                        }
+                        else
+                        {
+                            // perror("recv");
+                        }
+                        close(pfds[i].fd); // Bye!
+                        del_from_pfds(pfds, i, &fd_count);
+                    }
+                    else
+                    {       string it = recvbuf;
+                            int l = it.size();
+                            it[l - 1] = '\0';
+                            
+                            int k = 0;
+                            string fname="";
+                            while(it[k]!=' '){
+                               fname+=it[k];k++;     
+                            }
+                            // it=it.substr(0,it.length()-1);
+
+                            char *buffer;     //buffer to store file contents
+                            long size;     //file size
+                            ifstream file (argv[2]+fname, ios::in|ios::binary|ios::ate);     //open file in binary mode, get pointer at the end of the file (ios::ate)
+                            size = file.tellg();     //retrieve get pointer position
+                            file.seekg (0, ios::beg);     //position get pointer at the begining of the file
+                            buffer = new char [size];     //initialize the buffer
+                            file.read (buffer, size);     //read file to buffer
+                            file.close();     //close file
+                            sendall(it.second.second,fname, buffer, &size);
+                            char recvbuf[numbytes];
+                            int nbytes = recv(it.second.second, recvbuf, 2, 0);
+                            recvbuf[nbytes] = '\0';
+                            if (nbytes <= 0)
+                            {
+                                // Got error or connection closed by client
+                                if (nbytes == 0)
+                                {
+                                    // Connection closed
+                                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                                }
+                                else
+                                {
+                                    // perror("recv");
+                                }
+                                close(pfds[i].fd); // Bye!
+                                del_from_pfds(pfds, i, &fd_count);
+                            }
+                            else
+                            {}
+                            
+                    }
+                }    
+
+            }
         }
     }
 
 
     // 
-    while((no_of_ztype!=0)||(reply_to_files!=0)||(phase3_check!=0)||(phase3_small_client_cnt!=0)){
+    while((phase3_check!=0)||(phase3_small_client_cnt!=0)){
     // while(1){ 
            
         int poll_count = poll(pfds, fd_count, 1000);
@@ -1343,7 +1430,7 @@ int main(int argc, char *argv[])
                         }
                         for(auto it:r_msg[6]){
                             cout<<it<<endl;
-                            phase3_small_client_cnt--;
+                            
                             int k=0;string peer="";
                             while(it[k]!=' '){
                                 peer+=it[k];k++;
@@ -1480,6 +1567,7 @@ int main(int argc, char *argv[])
                                             phase3_ans.push_back(ans_here);
                                 }
                             }
+                            phase3_small_client_cnt--;
                         }  // END handle data from client
                     }     // END got ready-to-read from poll()
                 }         // END looping through file descriptors
