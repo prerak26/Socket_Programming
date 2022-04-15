@@ -809,7 +809,14 @@ int main(int argc, char *argv[])
     sort(search_files.begin(),search_files.end());
     for (auto it : search_files)
     {
-        cout<<"Found "+it+" at "+to_string(files_to_be_found_2[it].first)+" with MD5 0 at depth "+to_string(files_to_be_found_2[it].second)<<endl;
+        if(files_to_be_found_2[it].second==2){
+            cout<<"Found "+it+" at "+to_string(0)+" with MD5 0 at depth "+to_string(0)<<endl;
+        }
+        else{
+            cout<<"Found "+it+" at "+to_string(files_to_be_found_2[it].first)+" with MD5 0 at depth "+to_string(files_to_be_found_2[it].second)<<endl;
+        }
     }
-    return 0;
+
+
+   return 0;
 }   
