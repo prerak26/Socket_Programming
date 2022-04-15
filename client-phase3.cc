@@ -404,8 +404,10 @@ int main(int argc, char *argv[])
 
     int LOOP_NUMBER = 1;
     int B_3_M = 0;
+    int phase3_small_client_cnt=neighbours_accept.size();
     
     vector<pair<int,string>> phase1_output;
+    vector<string> phase3_ans; 
     while (n_sockfd.size() != (neighbours_connect.size() + neighbours_accept.size()))
     {
         n_connect = pandu;
@@ -610,6 +612,13 @@ int main(int argc, char *argv[])
     int Number_B_Send_1 = n_sockfd.size();
     int Number_B_Rec_1 = n_sockfd.size();
     int Reply_T = n_sockfd.size();
+
+    //Phase3 counters
+    int no_of_ztype=n_connect.size();
+    int reply_to_files=0;
+    map<string,string> phase3_md5;
+    
+    int phase3_check_betterhalf=0;
     
     while (Number_B_Rec_1!=0 || Number_B_Send_1!=0 || Reply_T !=0 || B_3_M !=0)
     {   
@@ -797,19 +806,605 @@ int main(int argc, char *argv[])
                             Reply_T--;
                             B_3_M+=stoi(n_2);
                         }
+
+                        for(auto it:r_msg[0]){
+                            int k=0;string temp="";
+                            while(it[k]!=' '){
+                                temp+=it[k];
+                                k++;
+                            }
+                            no_of_ztype--;
+                            reply_to_files+=stoi(temp);
+                        }
+
+                        for(auto it:r_msg[7]){
+                            int l = it.size();
+                            it[l - 1] = '\0';
+                            
+                            int k = 0;
+                            string fname="";
+                            while(it[k]!=' '){
+                               fname+=it[k];k++;     
+                            }
+                            // it=it.substr(0,it.length()-1);
+
+                            char *buffer;     //buffer to store file contents
+                            long size;     //file size
+                            ifstream file (argv[2]+fname, ios::in|ios::binary|ios::ate);     //open file in binary mode, get pointer at the end of the file (ios::ate)
+                            size = file.tellg();     //retrieve get pointer position
+                            file.seekg (0, ios::beg);     //position get pointer at the begining of the file
+                            buffer = new char [size];     //initialize the buffer
+                            file.read (buffer, size);     //read file to buffer
+                            file.close();     //close file
+                            sendall(sender_fd,fname, buffer, &size);
+                            reply_to_files--;
+                        }
+                        for(auto it:r_msg[5]){
+                            int l = it.size();
+                            it[l - 1] = '\0';
+                            
+                            int k = 0;
+                            string fname="";
+                            while(it[k]!=' '){
+                               fname+=it[k];k++;     
+                            }
+                            // it=it.substr(0,it.length()-1);
+
+                            char *buffer;     //buffer to store file contents
+                            long size;     //file size
+                            ifstream file (argv[2]+fname, ios::in|ios::binary|ios::ate);     //open file in binary mode, get pointer at the end of the file (ios::ate)
+                            size = file.tellg();     //retrieve get pointer position
+                            file.seekg (0, ios::beg);     //position get pointer at the begining of the file
+                            buffer = new char [size];     //initialize the buffer
+                            file.read (buffer, size);     //read file to buffer
+                            file.close();     //close file
+                            sendall(sender_fd,fname, buffer, &size);
+                            // reply_to_files--;
+                        }
+                        for(auto it:r_msg[6]){
+                            phase3_small_client_cnt--;
+                            string msg=it+" 7#";
+                            int k=0;string peer="";
+                            while(it[k]!=' '){
+                                peer+=it[k];k++;
+                            }
+                            int peerid=stoi(peer);
+
+                            for(auto sf:search_files){
+                                if(files_to_be_found_2[sf].first==peerid && files_to_be_found_2[sf].second==1){
+                                    string msg=sf+" 7#";
+                                    if (send(sender_fd, (msg.c_str()), msg.length(), 0) == -1){
+                                            perror("send");
+                                        }
+                                        // cout<<msg<<endl;
+                                        char recvbuf[numbytes];
+                                        int done=1;
+                                        long file_size;
+                                        long rec_size_tn ;
+                                        ofstream wf((path+"/"+sf).c_str(), ios::out | ios::binary);
+                                        if(!wf) {
+                                            cout << "Cannot open file!" << endl;
+                                            return 1;
+                                        }
+                                        int nbytes = recv(sender_fd, recvbuf, sizeof recvbuf, 0);
+                                        rec_size_tn = nbytes;
+                                        recvbuf[nbytes] = '\0';
+                                        // int sender_fd = it2.second.second;
+                                        if (nbytes <= 0)
+                                        {
+                                            // Got error or connection closed by client
+                                            if (nbytes == 0)
+                                            {
+                                                // Connection closed
+                                                printf("pollserver: socket %d hung up\n", sender_fd);
+                                            }
+                                            else
+                                            {
+                                                perror("recv");
+                                            }
+                                            close(sender_fd); // Bye!
+                                        /*
+                                            Delete pending findm in in pfds and delete;
+                                        */
+                                            del_from_pfds(pfds, i, &fd_count);
+                                        }
+                                        else{
+                                            int k=0;
+                                            string temp="";
+                                            while(recvbuf[k]!=' '){
+                                                temp+=recvbuf[k]; 
+                                                k++ ;
+                                            }
+                                            k++;
+                                            file_size= stoi(temp);//to store size
+                                            rec_size_tn -= k;
+                                            char *ptr=recvbuf+k;
+                                            wf.write((char *) ptr,nbytes-k);       
+                                        }
+
+                                        while((rec_size_tn)<file_size){
+                                            int nbytes = recv(sender_fd, recvbuf, sizeof recvbuf, 0);
+                                            int inrc = nbytes;
+                                            int dif = file_size-rec_size_tn;
+                                            if(dif<512){
+                                                inrc = dif;
+                                            }
+                                            rec_size_tn+=inrc;
+                                            recvbuf[nbytes] = '\0';
+                                            // int sender_fd = it2.second.second;
+                                            if (nbytes <= 0)
+                                            {
+                                                // Got error or connection closed by client
+                                                if (nbytes == 0)
+                                                {
+                                                    // Connection closed
+                                                    printf("pollserver: socket %d hung up\n", sender_fd);
+                                                }
+                                                else
+                                                {
+                                                    perror("recv");
+                                                }
+                                                close(sender_fd); // Bye!
+                                            /*
+                                                Delete pending findm in in pfds and delete;
+                                            */
+                                                del_from_pfds(pfds, i, &fd_count);
+                                            }
+                                            else{
+                                                wf.write((char *) recvbuf,inrc);
+                                            }
+                                            } 
+                                            // if (send(it2.second.second, "OK", 2, 0) == -1){
+                                            //     perror("send");
+                                            // }  
+                                            wf.close();  
+                                            string orig=argv[2];
+                                            orig+="Downloaded/";
+                                            unsigned char result[MD5_DIGEST_LENGTH];
+                                            FILE *inFile = fopen ((orig+sf).c_str(), "rb");
+                                            MD5_CTX mdContext;
+                                            int bytes;
+                                            unsigned char data[1024];
+                                            if (inFile == NULL) {
+                                                printf ("%s can't be opened.\n", sf.c_str());
+                                                return 0;
+                                            }
+                                            MD5_Init (&mdContext);
+                                            while ((bytes = fread (data, 1, 1024, inFile)) != 0)
+                                                MD5_Update (&mdContext, data, bytes);
+                                            MD5_Final (result,&mdContext);
+                                            string ans_here="Found "+sf+" at "+to_string(files_to_be_found_2[sf].first)+" with MD5 ";
+                                            string md5_val="";
+                                            for(int i=0; i <MD5_DIGEST_LENGTH; i++) {
+                                                std::string thisone( int_to_hex((int)result[i]) );
+                                                ans_here+=thisone;
+                                                md5_val+=thisone;
+                                            }
+                                            phase3_md5[sf]=md5_val;
+                                            phase3_check_betterhalf--;
+                                            ans_here+=" at depth 1";
+                                            phase3_ans.push_back(ans_here);
+                                }
+                            }
+                        }  // END handle data from client
                     }
-                      // END handle data from client
                 }     // END got ready-to-read from poll()
             }         // END looping through file descriptors
         }             // END for(;;)--and you thought it would never end!
     }
 
 
-    //For outputting the searched files in sorted order
+
+    //Start Phase 3 here
+    cout<<"Phase3<<started"<<endl;
+    //Ask the greater neighbours for the files
+    int phase3_check=0;
+    
+    for(auto it: search_files){
+        if(files_to_be_found_2[it].first!=0 && files_to_be_found_2[it].second==1){ 
+            phase3_check++;
+            for(auto it2:n_sockfd){
+                if((it2.first==files_to_be_found_2[it].first) && (it2.second.first > OWN_CLIENT_NO)){
+
+                    string msg=it+" 5#";
+                    
+                    if (send(it2.second.second, (msg.c_str()), msg.length(), 0) == -1){
+                        perror("send");
+                    }
+                   // cout<<msg<<endl;
+                    char recvbuf[numbytes];
+                    int done=1;
+                    long file_size;
+                    long rec_size_tn ;
+                    ofstream wf((path+"/"+it).c_str(), ios::out | ios::binary);
+                    if(!wf) {
+                        cout << "Cannot open file!" << endl;
+                        return 1;
+                    }
+                    int nbytes = recv(it2.second.second, recvbuf, sizeof recvbuf, 0);
+                    rec_size_tn = nbytes;
+                    recvbuf[nbytes] = '\0';
+                    int sender_fd = it2.second.second;
+                    if (nbytes <= 0)
+                    {
+                        // Got error or connection closed by client
+                        if (nbytes == 0)
+                        {
+                            // Connection closed
+                            printf("pollserver: socket %d hung up\n", sender_fd);
+                        }
+                        else
+                        {
+                            cout<<"here"<<endl;
+                            perror("recv");
+                        }
+                        close(it2.second.second); // Bye!
+                    /*
+                        Delete pending findm in in pfds and delete;
+                    */
+                        //del_from_pfds(pfds, i, &fd_count);
+                    }
+                    else{
+                        int k=0;
+                        string temp="";
+                        while(recvbuf[k]!=' '){
+                              temp+=recvbuf[k]; 
+                              k++ ;
+                        }
+                        k++;
+                        file_size= stoi(temp);
+                        rec_size_tn -= k;
+                        char *ptr=recvbuf+k;
+                        wf.write((char *) ptr,nbytes-k);       
+                    }
+
+                    while((rec_size_tn)<file_size){
+                        int nbytes = recv(it2.second.second, recvbuf, sizeof recvbuf, 0);
+                        int inrc = nbytes;
+                        int dif = file_size-rec_size_tn;
+                        if(dif<512){
+                            inrc = dif;
+                        }
+                        rec_size_tn+=inrc;
+                        recvbuf[nbytes] = '\0';
+                        int sender_fd = it2.second.second;
+                        if (nbytes <= 0)
+                        {
+                            // Got error or connection closed by client
+                            if (nbytes == 0)
+                            {
+                                // Connection closed
+                                printf("pollserver: socket %d hung up\n", sender_fd);
+                            }
+                            else
+                            {
+                                perror("recv");
+                            }
+                            close(it2.second.second); // Bye!
+                        /*
+                            Delete pending findm in in pfds and delete;
+                        */
+                            //del_from_pfds(pfds, i, &fd_count);
+                        }
+                        else{
+                            wf.write((char *) recvbuf,inrc);
+                        }
+                    } 
+                    // if (send(it2.second.second, "OK", 2, 0) == -1){
+                    //     perror("send");
+                    // }  
+                    wf.close();  
+                    string orig=argv[2];
+                    orig+="Downloaded/";
+                    unsigned char result[MD5_DIGEST_LENGTH];
+                    FILE *inFile = fopen ((orig+it).c_str(), "rb");
+                    MD5_CTX mdContext;
+                    int bytes;
+                    unsigned char data[1024];
+                    if (inFile == NULL) {
+                        printf ("%s can't be opened.\n", it.c_str());
+                        return 0;
+                    }
+                    MD5_Init (&mdContext);
+                    while ((bytes = fread (data, 1, 1024, inFile)) != 0)
+                        MD5_Update (&mdContext, data, bytes);
+                    MD5_Final (result,&mdContext);
+                    string ans_here="Found "+it+" at "+to_string(files_to_be_found_2[it].first)+" with MD5 ";
+                    string md5_val="";
+                    for(int i=0; i <MD5_DIGEST_LENGTH; i++) {
+                        std::string thisone( int_to_hex((int)result[i]) );
+                        ans_here+=thisone;
+                        md5_val+=thisone;
+                    }   
+                    ans_here+=" at depth 1";
+                    phase3_md5[it]=md5_val;
+                    phase3_ans.push_back(ans_here);
+                    // cout<<endl;
+                    phase3_check--;
+                    // ackcntphase3++;
+                    break;
+                }
+            }
+        }
+        // else{
+        //     string thisans="Found "+it+" at 0 with MD5 0 at depth 0";
+        //     phase3_ans.push_back(thisans);
+        // }    
+    }
+    phase3_check=phase3_check+phase3_check_betterhalf;
+    int phase3_req_cnt=0;
+    for(auto it:n_sockfd){
+        if(it.second.first>OWN_CLIENT_NO){
+            phase3_req_cnt++;
+            string msg=to_string(OWN_UNIQUE_ID)+" 6#";
+            if(send(it.second.second,msg.c_str(),msg.length(),0)==-1){
+                perror("send");
+            }
+        }
+    }
+
+
+    // 
+    while((no_of_ztype!=0)||(reply_to_files!=0)||(phase3_check!=0)||(phase3_small_client_cnt!=0)){
+    // while(1){ 
+           
+        int poll_count = poll(pfds, fd_count, 1000);
+
+        if (poll_count == -1)
+        {
+            perror("poll");
+            exit(1);
+        }
+
+        for (int i = 0; i < fd_count; i++)
+        {
+            // Check if someone's ready to read
+            if (pfds[i].revents & POLLIN)
+            { // We got one!!
+
+                if (pfds[i].fd == listener)
+                {
+                }
+                else
+                {
+                    // If not the listener, we're just a regular client
+                    char recvbuf[numbytes];
+                    int nbytes = recv(pfds[i].fd, recvbuf, sizeof recvbuf, 0);
+                    recvbuf[nbytes] = '\0';
+                    int sender_fd = pfds[i].fd;
+                    if (nbytes <= 0)
+                    {
+                        // Got error or connection closed by client
+                        if (nbytes == 0)
+                        {
+                            // Connection closed
+                            // printf("pollserver: socket %d hung up\n", sender_fd);
+                        }
+                        else
+                        {
+                            // perror("recv");
+                        }
+                        close(pfds[i].fd); // Bye!
+                        del_from_pfds(pfds, i, &fd_count);
+                    }
+                    else
+                    {
+                        vector<string> r_msgs = tokenize(recvbuf);
+                        vector<string> r_msg[10];
+                        for(auto it: r_msgs){
+                            int l = it.size(); 
+                            int x = it[l-1] - '0';
+                            r_msg[x].push_back(it);
+                        }
+                        for(auto it:r_msg[0]){
+                            cout<<it<<endl;
+                            int k=0;string temp="";
+                            while(it[k]!=' '){
+                                temp+=it[k];
+                                k++;
+                            }
+                            no_of_ztype--;
+                            reply_to_files+=stoi(temp);
+                        }
+
+                        for(auto it:r_msg[7]){
+                            cout<<it<<endl;
+                            int l = it.size();
+                            it[l - 1] = '\0';
+                            
+                            int k = 0;
+                            string fname="";
+                            while(it[k]!=' '){
+                               fname+=it[k];k++;     
+                            }
+                            // it=it.substr(0,it.length()-1);
+
+                            char *buffer;     //buffer to store file contents
+                            long size;     //file size
+                            ifstream file (argv[2]+fname, ios::in|ios::binary|ios::ate);     //open file in binary mode, get pointer at the end of the file (ios::ate)
+                            size = file.tellg();     //retrieve get pointer position
+                            file.seekg (0, ios::beg);     //position get pointer at the begining of the file
+                            buffer = new char [size];     //initialize the buffer
+                            file.read (buffer, size);     //read file to buffer
+                            file.close();     //close file
+                            sendall(sender_fd,fname, buffer, &size);
+                            reply_to_files--;
+                        }
+                        for(auto it:r_msg[5]){
+                            cout<<it<<endl;
+                            int l = it.size();
+                            it[l - 1] = '\0';
+                            
+                            int k = 0;
+                            string fname="";
+                            while(it[k]!=' '){
+                               fname+=it[k];k++;     
+                            }
+                            // it=it.substr(0,it.length()-1);
+
+                            char *buffer;     //buffer to store file contents
+                            long size;     //file size
+                            ifstream file (argv[2]+fname, ios::in|ios::binary|ios::ate);     //open file in binary mode, get pointer at the end of the file (ios::ate)
+                            size = file.tellg();     //retrieve get pointer position
+                            file.seekg (0, ios::beg);     //position get pointer at the begining of the file
+                            buffer = new char [size];     //initialize the buffer
+                            file.read (buffer, size);     //read file to buffer
+                            file.close();     //close file
+                            sendall(sender_fd,fname, buffer, &size);
+                            // reply_to_files--;
+                        }
+                        for(auto it:r_msg[6]){
+                            cout<<it<<endl;
+                            phase3_small_client_cnt--;
+                            int k=0;string peer="";
+                            while(it[k]!=' '){
+                                peer+=it[k];k++;
+                            }
+                            int peerid=stoi(peer);
+                            int no_of_files_i_want=0;
+                            for(auto sf:search_files){
+                                if(files_to_be_found_2[sf].first==peerid && files_to_be_found_2[sf].second==1){
+                                    no_of_files_i_want++;
+                                }
+                            }
+                            string msg=to_string(no_of_files_i_want)+" "+"0#";
+                            if (send(sender_fd, ((msg).c_str()), msg.length(), 0) == -1){
+                                perror("send");
+                            }
+
+                            for(auto sf:search_files){
+                                if(files_to_be_found_2[sf].first==peerid && files_to_be_found_2[sf].second==1){
+                                    string msg=sf+" 7#";
+                                    if (send(sender_fd, (msg.c_str()), msg.length(), 0) == -1){
+                                            perror("send");
+                                        }
+                                        // cout<<msg<<endl;
+                                        char recvbuf[numbytes];
+                                        int done=1;
+                                        long file_size;
+                                        long rec_size_tn ;
+                                        ofstream wf((path+"/"+sf).c_str(), ios::out | ios::binary);
+                                        if(!wf) {
+                                            cout << "Cannot open file!" << endl;
+                                            return 1;
+                                        }
+                                        int nbytes = recv(sender_fd, recvbuf, sizeof recvbuf, 0);
+                                        rec_size_tn = nbytes;
+                                        recvbuf[nbytes] = '\0';
+                                        // int sender_fd = it2.second.second;
+                                        if (nbytes <= 0)
+                                        {
+                                            // Got error or connection closed by client
+                                            if (nbytes == 0)
+                                            {
+                                                // Connection closed
+                                                printf("pollserver: socket %d hung up\n", sender_fd);
+                                            }
+                                            else
+                                            {
+                                                perror("recv");
+                                            }
+                                            close(sender_fd); // Bye!
+                                        /*
+                                            Delete pending findm in in pfds and delete;
+                                        */
+                                            del_from_pfds(pfds, i, &fd_count);
+                                        }
+                                        else{
+                                            int k=0;
+                                            string temp="";
+                                            while(recvbuf[k]!=' '){
+                                                temp+=recvbuf[k]; 
+                                                k++ ;
+                                            }
+                                            k++;
+                                            file_size= stoi(temp);//to store size
+                                            rec_size_tn -= k;
+                                            char *ptr=recvbuf+k;
+                                            wf.write((char *) ptr,nbytes-k);       
+                                        }
+
+                                        while((rec_size_tn)<file_size){
+                                            int nbytes = recv(sender_fd, recvbuf, sizeof recvbuf, 0);
+                                            int inrc = nbytes;
+                                            int dif = file_size-rec_size_tn;
+                                            if(dif<512){
+                                                inrc = dif;
+                                            }
+                                            rec_size_tn+=inrc;
+                                            recvbuf[nbytes] = '\0';
+                                            // int sender_fd = it2.second.second;
+                                            if (nbytes <= 0)
+                                            {
+                                                // Got error or connection closed by client
+                                                if (nbytes == 0)
+                                                {
+                                                    // Connection closed
+                                                    printf("pollserver: socket %d hung up\n", sender_fd);
+                                                }
+                                                else
+                                                {
+                                                    perror("recv");
+                                                }
+                                                close(sender_fd); // Bye!
+                                            /*
+                                                Delete pending findm in in pfds and delete;
+                                            */
+                                                del_from_pfds(pfds, i, &fd_count);
+                                            }
+                                            else{
+                                                wf.write((char *) recvbuf,inrc);
+                                            }
+                                            } 
+                                            // if (send(it2.second.second, "OK", 2, 0) == -1){
+                                            //     perror("send");
+                                            // }  
+                                            wf.close();  
+                                            string orig=argv[2];
+                                            orig+="Downloaded/";
+                                            unsigned char result[MD5_DIGEST_LENGTH];
+                                            FILE *inFile = fopen ((orig+sf).c_str(), "rb");
+                                            MD5_CTX mdContext;
+                                            int bytes;
+                                            unsigned char data[1024];
+                                            if (inFile == NULL) {
+                                                printf ("%s can't be opened.\n", sf.c_str());
+                                                return 0;
+                                            }
+                                            MD5_Init (&mdContext);
+                                            while ((bytes = fread (data, 1, 1024, inFile)) != 0)
+                                                MD5_Update (&mdContext, data, bytes);
+                                            MD5_Final (result,&mdContext);
+                                            string ans_here="Found "+sf+" at "+to_string(files_to_be_found_2[sf].first)+" with MD5 ";
+                                            string md5_val="";
+                                            for(int i=0; i <MD5_DIGEST_LENGTH; i++) {
+                                                std::string thisone( int_to_hex((int)result[i]) );
+                                                ans_here+=thisone;
+                                                md5_val+=thisone;
+                                            }   
+                                            ans_here+=" at depth 1";
+                                            phase3_md5[sf]=md5_val;
+                                            phase3_check--;
+                                            phase3_ans.push_back(ans_here);
+                                }
+                            }
+                        }  // END handle data from client
+                    }     // END got ready-to-read from poll()
+                }         // END looping through file descriptors
+            }
+        }
+    }
     sort(search_files.begin(),search_files.end());
     for (auto it : search_files)
     {
-        cout<<"Found "+it+" at "+to_string(files_to_be_found_2[it].first)+" with MD5 0 at depth "+to_string(files_to_be_found_2[it].second)<<endl;
+        if(files_to_be_found_2[it].second==1){
+            cout<<"Found "+it+" at "+to_string(files_to_be_found_2[it].first)+" with MD5 "+phase3_md5[it]+" at depth "+to_string(files_to_be_found_2[it].second)<<endl;
+        }
+        else{
+            cout<<"Found "+it+" at "+to_string(0)+" with MD5 0 at depth "+to_string(0)<<endl;
+        }
     }
+
+    
     return 0;
-}   
+}
