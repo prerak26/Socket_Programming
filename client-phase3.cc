@@ -837,6 +837,26 @@ int main(int argc, char *argv[])
                             file.read (buffer, size);     //read file to buffer
                             file.close();     //close file
                             sendall(sender_fd,fname, buffer, &size);
+                            char recvbuf[numbytes];
+                            int nbytes = recv(sender_fd, recvbuf, 2, 0);
+                            recvbuf[nbytes] = '\0';
+                            if (nbytes <= 0)
+                            {
+                                // Got error or connection closed by client
+                                if (nbytes == 0)
+                                {
+                                    // Connection closed
+                                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                                }
+                                else
+                                {
+                                    // perror("recv");
+                                }
+                                close(pfds[i].fd); // Bye!
+                                del_from_pfds(pfds, i, &fd_count);
+                            }
+                            else
+                            {}
                             reply_to_files--;
                         }
                         for(auto it:r_msg[5]){
@@ -859,6 +879,26 @@ int main(int argc, char *argv[])
                             file.read (buffer, size);     //read file to buffer
                             file.close();     //close file
                             sendall(sender_fd,fname, buffer, &size);
+                            char recvbuf[numbytes];
+                            int nbytes = recv(sender_fd, recvbuf, 2, 0);
+                            recvbuf[nbytes] = '\0';
+                            if (nbytes <= 0)
+                            {
+                                // Got error or connection closed by client
+                                if (nbytes == 0)
+                                {
+                                    // Connection closed
+                                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                                }
+                                else
+                                {
+                                    // perror("recv");
+                                }
+                                close(pfds[i].fd); // Bye!
+                                del_from_pfds(pfds, i, &fd_count);
+                            }
+                            else
+                            {}
                             // reply_to_files--;
                         }
                         for(auto it:r_msg[6]){
@@ -957,7 +997,11 @@ int main(int argc, char *argv[])
                                             // if (send(it2.second.second, "OK", 2, 0) == -1){
                                             //     perror("send");
                                             // }  
-                                            wf.close();  
+                                            wf.close(); 
+                                            //add
+                                            if (send(sender_fd, "OK", 2, 0) == -1){
+                                                perror("send");
+                                            } 
                                             string orig=argv[2];
                                             orig+="Downloaded/";
                                             unsigned char result[MD5_DIGEST_LENGTH];
@@ -1094,6 +1138,10 @@ int main(int argc, char *argv[])
                     //     perror("send");
                     // }  
                     wf.close();  
+                    //add
+                    if (send(it2.second.second, "OK", 2, 0) == -1){
+                            perror("send");
+                    }
                     string orig=argv[2];
                     orig+="Downloaded/";
                     unsigned char result[MD5_DIGEST_LENGTH];
@@ -1228,6 +1276,26 @@ int main(int argc, char *argv[])
                             file.read (buffer, size);     //read file to buffer
                             file.close();     //close file
                             sendall(sender_fd,fname, buffer, &size);
+                            char recvbuf[numbytes];
+                            int nbytes = recv(sender_fd, recvbuf, 2, 0);
+                            recvbuf[nbytes] = '\0';
+                            if (nbytes <= 0)
+                            {
+                                // Got error or connection closed by client
+                                if (nbytes == 0)
+                                {
+                                    // Connection closed
+                                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                                }
+                                else
+                                {
+                                    // perror("recv");
+                                }
+                                close(pfds[i].fd); // Bye!
+                                del_from_pfds(pfds, i, &fd_count);
+                            }
+                            else
+                            {}
                             reply_to_files--;
                         }
                         for(auto it:r_msg[5]){
@@ -1251,6 +1319,26 @@ int main(int argc, char *argv[])
                             file.read (buffer, size);     //read file to buffer
                             file.close();     //close file
                             sendall(sender_fd,fname, buffer, &size);
+                            char recvbuf[numbytes];
+                            int nbytes = recv(sender_fd, recvbuf, 2, 0);
+                            recvbuf[nbytes] = '\0';
+                            if (nbytes <= 0)
+                            {
+                                // Got error or connection closed by client
+                                if (nbytes == 0)
+                                {
+                                    // Connection closed
+                                    // printf("pollserver: socket %d hung up\n", sender_fd);
+                                }
+                                else
+                                {
+                                    // perror("recv");
+                                }
+                                close(pfds[i].fd); // Bye!
+                                del_from_pfds(pfds, i, &fd_count);
+                            }
+                            else
+                            {}
                             // reply_to_files--;
                         }
                         for(auto it:r_msg[6]){
@@ -1360,6 +1448,10 @@ int main(int argc, char *argv[])
                                             //     perror("send");
                                             // }  
                                             wf.close();  
+                                            //add
+                                            if (send(sender_fd, "OK", 2, 0) == -1){
+                                                perror("send");
+                                            }
                                             string orig=argv[2];
                                             orig+="Downloaded/";
                                             unsigned char result[MD5_DIGEST_LENGTH];
