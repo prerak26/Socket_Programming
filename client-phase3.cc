@@ -902,14 +902,23 @@ int main(int argc, char *argv[])
                             // reply_to_files--;
                         }
                         for(auto it:r_msg[6]){
-                            
-                
+                          
+                        //   cout<<it<<endl; 
                             int k=0;string peer="";
                             while(it[k]!=' '){
                                 peer+=it[k];k++;
                             }
                             int peerid=stoi(peer);
-
+                            int no_of_files_i_want=0;
+                            for(auto sf:search_files){
+                                if(files_to_be_found_2[sf].first==peerid && files_to_be_found_2[sf].second==1){
+                                    no_of_files_i_want++;
+                                }
+                            }
+                            string msg=to_string(no_of_files_i_want)+" "+"0#";
+                            if (send(sender_fd, ((msg).c_str()), msg.length(), 0) == -1){
+                                perror("send");
+                            }
                             for(auto sf:search_files){
                                 if(files_to_be_found_2[sf].first==peerid && files_to_be_found_2[sf].second==1){
                                     string msg=sf+" 7#";
@@ -1041,7 +1050,7 @@ int main(int argc, char *argv[])
 
 
     //Start Phase 3 here
-    cout<<"Phase3<<started"<<endl;
+    // cout<<"Phase3<<started"<<endl;
     //Ask the greater neighbours for the files
     int phase3_check=0;
     
@@ -1209,10 +1218,12 @@ int main(int argc, char *argv[])
             }
             else
             {
-                int number_off_to_send = atoi(recvbuf[0]);
-                while(number_off_to_send--){
+                // string a=recvbuf;
+                int a=recvbuf[0]-'0';
+                // int number_off_to_send = stoi(a[0]);
+                while(a--){
                     char recvbuf[numbytes];
-                    int nbytes = recv(it.second.second, recvbuf, size of recvbuf, 0);
+                    int nbytes = recv(it.second.second, recvbuf, sizeof recvbuf, 0);
                     recvbuf[nbytes] = '\0';
                     if (nbytes <= 0)
                     {
@@ -1230,14 +1241,14 @@ int main(int argc, char *argv[])
                         del_from_pfds(pfds, i, &fd_count);
                     }
                     else
-                    {       string it = recvbuf;
-                            int l = it.size();
-                            it[l - 1] = '\0';
+                    {       string it2 = recvbuf;
+                            int l = it2.size();
+                            it2[l - 1] = '\0';
                             
                             int k = 0;
                             string fname="";
-                            while(it[k]!=' '){
-                               fname+=it[k];k++;     
+                            while(it2[k]!=' '){
+                               fname+=it2[k];k++;     
                             }
                             // it=it.substr(0,it.length()-1);
 
@@ -1332,7 +1343,7 @@ int main(int argc, char *argv[])
                             r_msg[x].push_back(it);
                         }
                         for(auto it:r_msg[0]){
-                            cout<<it<<endl;
+                            // cout<<it<<endl;
                             int k=0;string temp="";
                             while(it[k]!=' '){
                                 temp+=it[k];
@@ -1343,7 +1354,7 @@ int main(int argc, char *argv[])
                         }
 
                         for(auto it:r_msg[7]){
-                            cout<<it<<endl;
+                            // cout<<it<<endl;
                             int l = it.size();
                             it[l - 1] = '\0';
                             
@@ -1386,7 +1397,7 @@ int main(int argc, char *argv[])
                             reply_to_files--;
                         }
                         for(auto it:r_msg[5]){
-                            cout<<it<<endl;
+                            // cout<<it<<endl;
                             int l = it.size();
                             it[l - 1] = '\0';
                             
@@ -1429,7 +1440,7 @@ int main(int argc, char *argv[])
                             // reply_to_files--;
                         }
                         for(auto it:r_msg[6]){
-                            cout<<it<<endl;
+                            // cout<<it<<endl;
                             
                             int k=0;string peer="";
                             while(it[k]!=' '){
